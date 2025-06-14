@@ -1,98 +1,136 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# 📄 Secure Chat Application - Backend BRD (Business Requirements Document)
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+## 📘 Overview
+A secure enterprise chat application supporting:
+- One-to-one and group messaging
+- End-to-end encryption (E2EE)
+- File sharing with optional encryption
+- Presence tracking and real-time communication
+- Optimized for <1000 users in a small enterprise
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+---
 
-## Description
+## 🎯 Goals
+- Deliver a secure, fast, and reliable internal messaging system
+- Ensure complete privacy via client-side encryption
+- Maintain FIFO message delivery and offline support
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+---
 
-## Project setup
+## 🧠 Core Features
 
-```bash
-$ npm install
+| #  | Feature                  | Description |
+|----|--------------------------|-------------|
+| 1  | Authentication           | Signup/Login with JWT. Store public keys for encryption. |
+| 2  | End-to-End Encryption    | Clients encrypt with recipient’s public key. Server stores ciphertext only. |
+| 3  | Real-time Messaging      | WebSocket gateway using NestJS and Redis Pub/Sub. |
+| 4  | Presence Management      | Redis for tracking online/offline status. |
+| 5  | Group Chat               | Groups with members and roles. Messages broadcast to group. |
+| 6  | File Sharing             | Files uploaded to S3/CDN. Optionally E2EE. Metadata stored. |
+| 7  | Search                   | Client-side search only via Fuse.js. Server offers paginated APIs. |
+| 8  | Rate Limiting            | Redis keys with TTL to detect and block spamming. |
+| 9  | Offline Delivery         | Store undelivered messages. Deliver in FIFO when recipient reconnects. |
+| 10 | Message Forwarding       | Create new message with copied ciphertext and metadata. |
+
+---
+
+## 🏗️ Tech Stack
+
+| Component       | Technology        |
+|------------------|-------------------|
+| Backend          | NestJS (Node.js)  |
+| User DB          | PostgreSQL        |
+| Message & File DB| MongoDB           |
+| Realtime Pub/Sub | Redis             |
+| Encryption       | Client-side E2EE  |
+| File Storage     | S3 / Cloudinary   |
+| Rate Limiting    | Redis             |
+| Optional Queue   | RabbitMQ (notifications, retries) |
+
+---
+
+## 🗃️ Data Models
+
+### PostgreSQL (Users)
+```sql
+User {
+  id
+  email
+  password
+  publicKey
+  createdAt
+}
 ```
 
-## Compile and run the project
+### MongoDB (Messages, Groups, Files)
+```json
+Message {
+  chatId,
+  senderId,
+  receiverId / groupId,
+  ciphertext,
+  timestamp,
+  status
+}
 
-```bash
-# development
-$ npm run start
+Group {
+  id,
+  name,
+  members: [],
+  roles: {}
+}
 
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+File {
+  ownerId,
+  fileType,
+  url,
+  chatId,
+  timestamp
+}
 ```
 
-## Run tests
+### Redis (In-memory)
+- `presence:userId = online/offline`
+- `rate:userId:chatId = count (TTL 5s)`
+- `activeSockets:groupId = [socketIds]`
 
-```bash
-# unit tests
-$ npm run test
+---
 
-# e2e tests
-$ npm run test:e2e
+## 🗓️ Weekly Development Milestones
 
-# test coverage
-$ npm run test:cov
-```
+| Week | Backend Focus |
+|------|---------------|
+| 1    | Auth system, key generation/storage, JWT setup |
+| 2    | WebSocket setup, JWT handshake, 1:1 chat logic |
+| 3    | Redis Pub/Sub, Message storage, Presence logic |
+| 4    | Group chat creation, message routing, MongoDB schemas |
+| 5    | File sharing (S3 CDN), metadata APIs, optional E2EE for files |
+| 6    | Pagination, search prep, rate limiting, cleanup, testing |
 
-## Deployment
+---
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+## 📌 Notes
+- All message encryption/decryption happens **only on client**.
+- Backend only stores and routes encrypted data.
+- RabbitMQ is optional and used for background tasks (retries, notifications).
+- Redis ensures fast ephemeral storage for presence and rate control.
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+---
 
-```bash
-$ npm install -g mau
-$ mau deploy
-```
+## 🔐 Security Checklist
+- ✅ JWT Auth with refresh tokens
+- ✅ Public/Private keypair for each user
+- ✅ No plaintext messages stored
+- ✅ Rate limiting & spam protection
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+---
 
-## Resources
+## 📦 Future Enhancements
+- Push notifications using FCM/Expo
+- Typing indicators
+- Message read receipts
+- Admin/moderator dashboard
 
-Check out a few resources that may come in handy when working with NestJS:
+---
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
-
-## Support
-
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+> © 2025 Secure Chat Team — Backend Architecture and Roadmap

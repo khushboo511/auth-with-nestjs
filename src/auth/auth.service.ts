@@ -6,6 +6,7 @@ import { SigninDto } from './dto/signin.dto';
 import { SignUpDto } from './dto/signup.dto';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
+import { Role } from './roles';
 
 @Injectable()
 export class AuthService {
@@ -26,6 +27,8 @@ export class AuthService {
           lastName: dto.lastName,
           email: dto.email,
           hash,
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+          role: dto.role,
         },
         // select: {
         //   id: true,
@@ -33,7 +36,7 @@ export class AuthService {
         //   createdAt: true,
         // },
       });
-      const tokens = await this.jwtToken(user.id, user.email);
+      const tokens = await this.jwtToken(user.id, user.email, user.role);
       await this.updateRtHash(user.id, tokens.refresh_token);
       return tokens;
     } catch (error) {
@@ -61,8 +64,14 @@ export class AuthService {
     if (!pwdMatch) throw new ForbiddenException('Credentials incorrect');
 
     // return this.jwtToken(user.id, user.email);
-    const tokens = await this.jwtToken(user.id, user.email);
+    const tokens = await this.jwtToken(user.id, user.email, user.role);
+    console.log(user.id, user.role, user.email);
     await this.updateRtHash(user.id, tokens.refresh_token);
+
+    if (user.role !== Role.User) {
+      throw new ForbiddenException('Access denied');
+    }
+
     return tokens;
   }
 
@@ -81,8 +90,9 @@ export class AuthService {
   async jwtToken(
     userId: number,
     email: string,
+    role: any,
   ): Promise<{ access_token: string; refresh_token: string }> {
-    const payload = { sub: userId, email };
+    const payload = { sub: userId, email, role };
     const secret = this.config.get<string>('JWT_SECRET');
 
     const access_token = await this.jwt.signAsync(payload, {

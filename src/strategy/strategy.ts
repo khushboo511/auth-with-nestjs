@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
@@ -21,12 +21,18 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
     });
   }
 
-  async validate(payload: { sub: number; email: string }) {
+  async validate(payload: { sub: number; email: string; role: any }) {
     const user = await this.prisma.user.findUnique({
       where: {
         id: payload.sub,
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        role: payload.role,
       },
     });
+
+    if (!payload.role) {
+      throw new UnauthorizedException('Role missing');
+    }
     // delete user?.hash;
     console.log(payload);
     return user;
