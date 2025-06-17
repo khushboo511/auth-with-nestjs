@@ -65,7 +65,6 @@ export class AuthService {
 
     // return this.jwtToken(user.id, user.email);
     const tokens = await this.jwtToken(user.id, user.email, user.role);
-    console.log(user.id, user.role, user.email);
     await this.updateRtHash(user.id, tokens.refresh_token);
 
     if (user.role !== Role.User) {
@@ -110,7 +109,6 @@ export class AuthService {
 
   async updateRtHash(userId: number, rt: string) {
     const hash = await argon2.hash(rt);
-    console.log(hash);
     await this.prisma.user.update({
       where: {
         id: userId,

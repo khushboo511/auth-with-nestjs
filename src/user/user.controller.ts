@@ -1,7 +1,7 @@
 import { Controller, Get, Patch, UseGuards } from '@nestjs/common';
 import { User } from 'generated/prisma';
-import { JwtGuard } from 'src/auth/guards';
-import { RolesGuard } from 'src/auth/guards/roles.guard';
+import { JwtGuard } from 'src/common/guards';
+import { RolesGuard } from 'src/common/guards/roles.guard';
 import { getUser } from 'src/decorator/getUser-decorator';
 import { Roles } from 'src/decorator/roles-decorator';
 
@@ -21,5 +21,12 @@ export class UserController {
   @Get('admin-only')
   getAdminData() {
     return 'Only accessible to admins';
+  }
+
+  @UseGuards(RolesGuard)
+  @Roles('user')
+  @Get('new')
+  new() {
+    return 'new';
   }
 }

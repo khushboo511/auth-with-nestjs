@@ -9,7 +9,7 @@ import {
 import { AuthService } from './auth.service';
 import { SigninDto } from './dto/signin.dto';
 import { SignUpDto } from './dto/signup.dto';
-import { JwtGuard } from './guards';
+import { JwtGuard } from '../common/guards';
 import { getUser } from 'src/decorator/getUser-decorator';
 
 @Controller('auth')
@@ -18,7 +18,6 @@ export class AuthController {
 
   @Post('signup')
   signup(@Body() dto: SignUpDto) {
-    console.log('Signup route hit');
     return this.authService.signup(dto);
   }
 

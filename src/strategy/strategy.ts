@@ -34,7 +34,6 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
       throw new UnauthorizedException('Role missing');
     }
     // delete user?.hash;
-    console.log(payload);
     return user;
   }
 }
