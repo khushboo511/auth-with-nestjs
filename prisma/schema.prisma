@@ -14,39 +14,99 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum Role {
-  admin
-  moderator
-  user
+
+
+enum DocumentStatus {
+  DRAFT
+  PUBLISHED
 }
 
 model User {
-  id        Int      @id @default(autoincrement())
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id             Int          @id @default(autoincrement())
+  email          String       @unique
+  hash           String
+  firstName      String
+  lastName       String
+  hashedRt       String?
 
-  email     String     @unique
-  hash      String
-  firstName String
-  lastName  String
-  hashedRt  String?
-  role      Role @default(user)
-  bookmarks Bookmark[]
+  documents      Document[]   @relation("Owner")
+  collaborations Document[]   @relation("Collaborators")
+
+  comments       Comment[]
+  bookmarks      Bookmark[]
+  likes          Like[]
+
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
 
   @@map("users")
 }
 
+model Document {
+  id             Int            @id @default(autoincrement())
+  title          String
+  content        String
+  status         DocumentStatus @default(DRAFT)
+
+  ownerId        Int
+  owner          User           @relation("Owner", fields: [ownerId], references: [id])
+
+  collaborators  User[]         @relation("Collaborators")
+
+  comments       Comment[]
+  bookmarks      Bookmark[]
+  likes          Like[]
+
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  @@map("documents")
+}
+
+model Comment {
+  id         Int       @id @default(autoincrement())
+  message    String
+
+  authorId   Int
+  author     User      @relation(fields: [authorId], references: [id])
+
+  documentId Int
+  document   Document  @relation(fields: [documentId], references: [id])
+
+  deleted    Boolean   @default(false)
+
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@map("comments")
+}
+
 model Bookmark {
-  id        Int      @id @default(autoincrement())
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id         Int       @id @default(autoincrement())
 
-  title       String
-  description String
-  link        String
+  userId     Int
+  user       User      @relation(fields: [userId], references: [id])
 
-  userId Int
-  user   User @relation(fields: [userId], references: [id])
+  documentId Int
+  document   Document  @relation(fields: [documentId], references: [id])
 
+  createdAt  DateTime  @default(now())
+
+  @@unique([userId, documentId])
   @@map("bookmarks")
+}
+
+model Like {
+  id         Int       @id @default(autoincrement())
+
+  userId     Int
+  user       User      @relation(fields: [userId], references: [id])
+
+  documentId Int
+  document   Document  @relation(fields: [documentId], references: [id])
+
+  createdAt  DateTime  @default(now())
+
+  @@unique([userId, documentId])
+  @@map("likes")
 }

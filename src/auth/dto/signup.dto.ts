@@ -1,5 +1,4 @@
 import { IsEmail, IsNotEmpty, IsString } from 'class-validator';
-import { Role } from '../roles';
 
 export class SignUpDto {
   @IsEmail()
@@ -17,8 +16,4 @@ export class SignUpDto {
   @IsString()
   @IsNotEmpty()
   lastName: string;
-
-  @IsString()
-  @IsNotEmpty()
-  role: Role;
 }
